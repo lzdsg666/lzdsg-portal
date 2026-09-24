@@ -42,6 +42,10 @@ if (missingCss.length) {
   console.error(`missing responsive/accessibility markers: ${missingCss.join(', ')}`);
   process.exit(1);
 }
+if (!/\[hidden\]\s*\{\s*display:\s*none\s*!important;\s*\}/.test(css)) {
+  console.error('hidden UI states must remain hidden despite component display rules');
+  process.exit(1);
+}
 if (!app.includes('renderProjectError') || !app.includes('aria-busy') || !app.includes("import('./projects.js')")) {
   console.error('missing project loading/error handling');
   process.exit(1);
