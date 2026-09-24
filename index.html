@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b0d12">
+  <meta name="description" content="LZDSG 个人网络与项目导航门户。">
+  <title>LZDSG — Personal Network</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#main-content">跳到主要内容</a>
+  <div class="page-glow page-glow-a" aria-hidden="true"></div>
+  <div class="page-glow page-glow-b" aria-hidden="true"></div>
+
+  <header class="site-header">
+    <a class="brand" href="#main-content" aria-label="LZDSG 首页">
+      <span class="brand-mark">L</span>
+      <span class="brand-text"><strong>LZDSG</strong><small>PERSONAL NETWORK</small></span>
+    </a>
+    <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="site-nav">菜单</button>
+    <nav id="site-nav" class="site-nav" aria-label="主导航">
+      <a class="active" href="#main-content">首页</a>
+      <a href="#network-lab">Network Lab</a>
+      <a href="#blog">Blog</a>
+      <a href="#tools">Tools</a>
+      <a href="#projects">Projects</a>
+      <a href="#about">About</a>
+    </nav>
+    <button class="theme-toggle" type="button" aria-label="切换色彩主题" aria-pressed="false">◐</button>
+  </header>
+
+  <main id="main-content">
+    <section class="hero shell" aria-labelledby="hero-title">
+      <div class="hero-copy reveal">
+        <p class="eyebrow"><span class="status-dot"></span> PERSONAL NETWORK / 01</p>
+        <h1 id="hero-title">把想法，<em>连成网络。</em></h1>
+        <p class="hero-lede">LZDSG 是一个持续生长的个人网络：实验、文章、工具和项目，都从这里出发。</p>
+        <div class="hero-actions">
+          <a class="button button-primary" href="#network-lab">探索 Network Lab <span>↗</span></a>
+          <a class="text-link" href="#projects">查看项目 <span>↓</span></a>
+        </div>
+        <div class="hero-meta"><span>CURIOUS BY DEFAULT</span><i></i><span>BUILDING IN PUBLIC</span></div>
+      </div>
+      <div class="network-card reveal" aria-label="LZDSG 网络状态">
+        <div class="network-head"><span><i class="signal"></i> LZDSG CORE</span><b>LOCAL / ONLINE</b></div>
+        <div class="network-map" aria-hidden="true">
+          <span class="orbit orbit-one"></span><span class="orbit orbit-two"></span>
+          <span class="node node-main">L</span><span class="node node-lab">LAB</span>
+          <span class="node node-tools">TOOLS</span><span class="node node-projects">PROJECTS</span>
+          <span class="line line-one"></span><span class="line line-two"></span><span class="line line-three"></span>
+        </div>
+        <div class="network-foot"><span>6 DESTINATIONS</span><span id="clock">--:--:-- UTC</span></div>
+      </div>
+    </section>
+
+    <section class="ticker" aria-label="LZDSG 介绍">
+      <div class="ticker-track"><span>MAKE / EXPLORE / CONNECT</span><i>✦</i><span>MAKE / EXPLORE / CONNECT</span><i>✦</i><span>MAKE / EXPLORE / CONNECT</span></div>
+    </section>
+
+    <section id="network-lab" class="shell section-block">
+      <div class="section-heading reveal"><p class="eyebrow">01 / ACTIVE NODE</p><h2>从实验室开始。</h2><p>一个独立运行的网络工具实验室，保持好奇，也保持好用。</p></div>
+      <a class="feature-card reveal" href="https://lab.lzdsg.top" target="_blank" rel="noreferrer">
+        <div class="feature-icon">↗</div><div><p class="card-kicker">LZDSG NETWORK LAB / V4</p><h3>工具、游戏与网络实验</h3><p>LOCAL-FIRST 的浏览器实验台。网络检测、开发工具、实用工具和轻量小游戏，都在这里。</p></div><span class="card-arrow">→</span>
+      </a>
+    </section>
+
+    <section class="shell section-block split-section">
+      <div id="projects" class="section-heading reveal"><p class="eyebrow">02 / PROJECT INDEX</p><h2>正在连接的项目。</h2><p>这里会逐渐收集正在进行、已经完成、以及下一步想做的事情。</p></div>
+      <div id="project-grid" class="project-grid" aria-live="polite" aria-busy="true"><p class="project-state-message">正在加载项目索引…</p></div>
+    </section>
+
+    <section id="blog" class="shell quote-section reveal">
+      <p class="eyebrow">03 / PRINCIPLE</p><blockquote>“先做一个能用的节点，<br><em>再让它连接更多东西。</em>”</blockquote>
+      <p class="quote-note">LZDSG 不是一个一次完成的网站，而是一张持续增加连接的地图。</p>
+    </section>
+
+    <section id="about" class="shell section-block about-section">
+      <div class="section-heading reveal"><p class="eyebrow">04 / ABOUT THE NETWORK</p><h2>轻量、独立、<br>持续生长。</h2></div>
+      <div class="about-copy reveal"><p>LZDSG 主站是一个导航门户，前端项目与统一 API 解耦。未来可以接入登录，但不会让基础浏览和项目导航依赖账号。</p><div class="principles"><span><b>01</b> MOBILE FIRST</span><span><b>02</b> API DECOUPLED</span><span><b>03</b> SMALL MOTION</span><span><b>04</b> OPEN ENDS</span></div></div>
+    </section>
+  </main>
+
+  <footer class="site-footer shell"><span><strong>LZDSG</strong> / PERSONAL NETWORK</span><span>Built slowly, connected carefully.</span><a href="#main-content">回到顶部 ↑</a></footer>
+  <script type="module" src="app.js"></script>
+</body>
+</html>
