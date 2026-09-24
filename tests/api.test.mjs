@@ -63,4 +63,9 @@ test('403, 429 Retry-After and server failures remain typed for safe UI messages
       return true;
     });
   }
+  assert.equal(api.safeErrorMessage(new api.ApiError(401, 'INVALID_CREDENTIALS')), '邮箱或密码不正确，请重试。');
+  assert.equal(api.safeErrorMessage(new api.ApiError(403, 'FORBIDDEN')), '当前账号没有执行此操作的权限。');
+  assert.equal(api.safeErrorMessage(new api.ApiError(429, 'RATE_LIMITED', '17')), '操作过于频繁，请在 17 秒后重试。');
+  assert.equal(api.safeErrorMessage(new api.ApiError(503, 'INTERNAL_ERROR')), '服务暂时不可用，请稍后重试。');
+  assert.equal(api.safeErrorMessage(new Error('database password leaked')), '请求未能完成，请稍后重试。');
 });

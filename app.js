@@ -1,4 +1,4 @@
-import { ApiError, clearToken, getApiBaseUrl, getToken, request, saveToken } from './api.js';
+import { ApiError, clearToken, getApiBaseUrl, getToken, request, safeErrorMessage, saveToken } from './api.js';
 
 const body = document.body;
 const menuToggle = document.querySelector('.menu-toggle');
@@ -27,22 +27,7 @@ const setApiState = (state) => {
 
 const showAuthError = (error) => {
   if (!authError) return;
-  let message = '请求未能完成，请稍后重试。';
-  if (error instanceof ApiError) {
-    if (error.status === 401) message = '邮箱或密码不正确，请重试。';
-    else if (error.status === 403) message = '当前账号没有执行此操作的权限。';
-    else if (error.status === 409) message = '用户名或邮箱已被使用。';
-    else if (error.status === 429) {
-      const seconds = Number(error.retryAfter);
-      message = Number.isFinite(seconds) && seconds > 0
-        ? `操作过于频繁，请在 ${Math.ceil(seconds)} 秒后重试。`
-        : '操作过于频繁，请稍后重试。';
-    } else if (error.status >= 500) message = '服务暂时不可用，请稍后重试。';
-    else if (error.status === 400) message = '请检查填写的信息是否正确。';
-  } else if (error instanceof Error && error.message.startsWith('无法连接 API')) {
-    message = '暂时无法连接账号服务，请检查网络后重试。';
-  }
-  authError.textContent = message;
+  authError.textContent = safeErrorMessage(error);
   authError.hidden = false;
 };
 

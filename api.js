@@ -23,6 +23,26 @@ export class ApiError extends Error {
   }
 }
 
+export const safeErrorMessage = (error) => {
+  if (error instanceof ApiError) {
+    if (error.status === 401) return '邮箱或密码不正确，请重试。';
+    if (error.status === 403) return '当前账号没有执行此操作的权限。';
+    if (error.status === 409) return '用户名或邮箱已被使用。';
+    if (error.status === 429) {
+      const seconds = Number(error.retryAfter);
+      return Number.isFinite(seconds) && seconds > 0
+        ? `操作过于频繁，请在 ${Math.ceil(seconds)} 秒后重试。`
+        : '操作过于频繁，请稍后重试。';
+    }
+    if (error.status >= 500) return '服务暂时不可用，请稍后重试。';
+    if (error.status === 400) return '请检查填写的信息是否正确。';
+  }
+  if (error instanceof Error && error.message.startsWith('无法连接 API')) {
+    return '暂时无法连接账号服务，请检查网络后重试。';
+  }
+  return '请求未能完成，请稍后重试。';
+};
+
 export const getToken = () => {
   if (memoryTokenSet) return memoryToken;
   try {
