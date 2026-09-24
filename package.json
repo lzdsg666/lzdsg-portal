@@ -1,0 +1,11 @@
+{
+  "name": "lzdsg-portal",
+  "version": "0.1.0",
+  "private": true,
+  "description": "LZDSG personal network and project navigation portal",
+  "type": "module",
+  "scripts": {
+    "check": "node scripts/check.mjs",
+    "build": "node scripts/check.mjs --build"
+  }
+}
