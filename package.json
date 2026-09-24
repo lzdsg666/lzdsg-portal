@@ -6,6 +6,7 @@
   "type": "module",
   "scripts": {
     "check": "node scripts/check.mjs",
-    "build": "node scripts/check.mjs --build"
+    "build": "node scripts/check.mjs --build",
+    "test": "node --test tests/*.test.mjs"
   }
 }

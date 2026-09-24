@@ -3,8 +3,10 @@ import { readFile, stat } from 'node:fs/promises';
 const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
 const css = await readFile(new URL('../styles.css', import.meta.url), 'utf8');
 const app = await readFile(new URL('../app.js', import.meta.url), 'utf8');
+const api = await readFile(new URL('../api.js', import.meta.url), 'utf8');
+const apiConfig = await readFile(new URL('../api-config.js', import.meta.url), 'utf8');
 const data = await readFile(new URL('../projects.js', import.meta.url), 'utf8');
-const required = ['main-content', 'network-lab', 'projects', 'tools', 'blog', 'about', 'project-grid', 'https://lab.lzdsg.top', 'styles.css', 'app.js', 'aria-live', 'aria-busy'];
+const required = ['main-content', 'network-lab', 'projects', 'tools', 'blog', 'about', 'account', 'auth-form', 'api-status', 'project-grid', 'https://lab.lzdsg.top', 'styles.css', 'app.js', 'api-config.js', 'aria-live', 'aria-busy'];
 const missing = required.filter((value) => !html.includes(value));
 if (missing.length) {
   console.error(`missing required portal markers: ${missing.join(', ')}`);
@@ -44,7 +46,13 @@ if (!app.includes('renderProjectError') || !app.includes('aria-busy') || !app.in
   console.error('missing project loading/error handling');
   process.exit(1);
 }
-for (const file of ['index.html', 'styles.css', 'app.js', 'projects.js']) {
+const authRequired = ['credentials: \'omit\'', "cache: 'no-store'", 'authorization', 'clearToken'];
+const missingAuth = authRequired.filter((value) => !api.includes(value));
+if (missingAuth.length || !apiConfig.includes('https://api.lzdsg.top') || !app.includes('/api/v1/auth/me')) {
+  console.error(`missing API/auth safety wiring: ${missingAuth.join(', ')}`);
+  process.exit(1);
+}
+for (const file of ['index.html', 'styles.css', 'app.js', 'api.js', 'api-config.js', 'projects.js']) {
   const info = await stat(new URL(`../${file}`, import.meta.url));
   if (info.size > 120_000) throw new Error(`${file} is unexpectedly large`);
 }

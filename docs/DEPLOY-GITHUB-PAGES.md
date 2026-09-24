@@ -16,10 +16,9 @@ git push -u origin main
 然后在 GitHub 仓库设置中选择：
 
 - Settings → Pages
-- Source: Deploy from a branch
-- Branch: `main`
-- Folder: `/ (root)`
-- 不设置 Custom domain
+- Source: GitHub Actions
+- Workflow: `.github/workflows/pages.yml`
+- Custom domain: `lzdsg.top`（仓库根目录 `CNAME`）
 
 预览地址通常为：
 
@@ -34,4 +33,4 @@ npm run check
 npm run build
 ```
 
-Pages 根目录必须包含 `index.html`、`404.html`、`styles.css`、`app.js` 和 `projects.js`。`.nojekyll` 确保静态资源不被 Jekyll 规则意外处理。`404.html` 使用 `./` 返回项目根目录，兼容 `/lzdsg-portal/` 这种 project Pages 路径。当前项目没有自定义域名文件，也不会修改 `lzdsg.top` 或 Cloudflare/DNS。
+Pages 根目录必须包含 `index.html`、`404.html`、`styles.css`、`app.js`、`api.js`、`api-config.js` 和 `projects.js`。`.nojekyll` 确保静态资源不被 Jekyll 规则意外处理。`api-config.js` 是浏览器可见的公开配置，当前 API 地址为 `https://api.lzdsg.top`；严禁在此文件放入密码、Token 或其他 Secret。认证使用现有 API 的 bearer session，浏览器只持久化 session token，所有请求设置 `cache: no-store` 并禁用 cookie credentials。

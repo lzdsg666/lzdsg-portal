@@ -43,7 +43,7 @@
         <div class="hero-meta"><span>CURIOUS BY DEFAULT</span><i></i><span>BUILDING IN PUBLIC</span></div>
       </div>
       <div class="network-card reveal" aria-label="LZDSG 网络状态">
-        <div class="network-head"><span><i class="signal"></i> LZDSG CORE</span><b>LOCAL / ONLINE</b></div>
+        <div class="network-head"><span><i class="signal"></i> LZDSG CORE</span><b>API <span id="api-status" role="status" aria-live="polite">CHECKING</span></b></div>
         <div class="network-map" aria-hidden="true">
           <span class="orbit orbit-one"></span><span class="orbit orbit-two"></span>
           <span class="node node-main">L</span><span class="node node-lab">LAB</span>
@@ -70,6 +70,32 @@
       <div id="project-grid" class="project-grid" aria-live="polite" aria-busy="true"><p class="project-state-message">正在加载项目索引…</p></div>
     </section>
 
+    <section id="account" class="shell section-block account-section" aria-labelledby="account-title">
+      <div class="section-heading"><p class="eyebrow">05 / UNIFIED ACCOUNT</p><h2 id="account-title">你的 LZDSG 账号。</h2><p>用于连接 LZDSG 项目的统一账号入口。</p></div>
+      <div class="account-panel">
+        <p id="account-message" class="account-message" role="status" aria-live="polite">正在检查登录状态…</p>
+        <p id="account-user" class="account-user" hidden></p>
+        <form id="auth-form" class="auth-form" hidden>
+          <div class="auth-mode" role="group" aria-label="选择登录或注册">
+            <button id="mode-login" type="button" aria-pressed="true">登录</button>
+            <button id="mode-register" type="button" aria-pressed="false">注册</button>
+          </div>
+          <label id="username-field" hidden>用户名
+            <input name="username" type="text" minlength="3" maxlength="32" pattern="[A-Za-z0-9_]+" autocomplete="username">
+          </label>
+          <label>邮箱
+            <input name="email" type="email" maxlength="320" autocomplete="email" required>
+          </label>
+          <label>密码（至少 12 位）
+            <input name="password" type="password" minlength="12" maxlength="128" autocomplete="current-password" required>
+          </label>
+          <p id="auth-error" class="auth-error" role="alert" hidden></p>
+          <button id="auth-submit" class="button button-primary" type="submit">登录</button>
+        </form>
+        <button id="logout-button" class="text-link logout-button" type="button" hidden>退出登录</button>
+      </div>
+    </section>
+
     <section id="blog" class="shell quote-section reveal">
       <p class="eyebrow">03 / PRINCIPLE</p><blockquote>“先做一个能用的节点，<br><em>再让它连接更多东西。</em>”</blockquote>
       <p class="quote-note">LZDSG 不是一个一次完成的网站，而是一张持续增加连接的地图。</p>
@@ -82,6 +108,7 @@
   </main>
 
   <footer class="site-footer shell"><span><strong>LZDSG</strong> / PERSONAL NETWORK</span><span>Built slowly, connected carefully.</span><a href="#main-content">回到顶部 ↑</a></footer>
+  <script src="api-config.js"></script>
   <script type="module" src="app.js"></script>
 </body>
 </html>

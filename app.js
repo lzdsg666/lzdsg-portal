@@ -1,10 +1,167 @@
+import { ApiError, clearToken, getApiBaseUrl, getToken, request, saveToken } from './api.js';
+
 const body = document.body;
 const menuToggle = document.querySelector('.menu-toggle');
 const nav = document.querySelector('#site-nav');
 const themeToggle = document.querySelector('.theme-toggle');
 const clock = document.querySelector('#clock');
 const projectGrid = document.querySelector('#project-grid');
+const apiStatus = document.querySelector('#api-status');
+const accountMessage = document.querySelector('#account-message');
+const accountUser = document.querySelector('#account-user');
+const authForm = document.querySelector('#auth-form');
+const authError = document.querySelector('#auth-error');
+const usernameField = document.querySelector('#username-field');
+const modeLogin = document.querySelector('#mode-login');
+const modeRegister = document.querySelector('#mode-register');
+const authSubmit = document.querySelector('#auth-submit');
+const logoutButton = document.querySelector('#logout-button');
+let authMode = 'login';
 let projects = null;
+
+const setApiState = (state) => {
+  if (!apiStatus) return;
+  apiStatus.textContent = state === 'online' ? 'ONLINE' : state === 'offline' ? 'OFFLINE' : 'CHECKING';
+  apiStatus.dataset.state = state;
+};
+
+const showAuthError = (error) => {
+  if (!authError) return;
+  let message = '请求未能完成，请稍后重试。';
+  if (error instanceof ApiError) {
+    if (error.status === 401) message = '邮箱或密码不正确，请重试。';
+    else if (error.status === 403) message = '当前账号没有执行此操作的权限。';
+    else if (error.status === 409) message = '用户名或邮箱已被使用。';
+    else if (error.status === 429) {
+      const seconds = Number(error.retryAfter);
+      message = Number.isFinite(seconds) && seconds > 0
+        ? `操作过于频繁，请在 ${Math.ceil(seconds)} 秒后重试。`
+        : '操作过于频繁，请稍后重试。';
+    } else if (error.status >= 500) message = '服务暂时不可用，请稍后重试。';
+    else if (error.status === 400) message = '请检查填写的信息是否正确。';
+  } else if (error instanceof Error && error.message.startsWith('无法连接 API')) {
+    message = '暂时无法连接账号服务，请检查网络后重试。';
+  }
+  authError.textContent = message;
+  authError.hidden = false;
+};
+
+const showSignedOut = (message = '登录后可使用统一账号。') => {
+  if (accountMessage) {
+    accountMessage.textContent = message;
+    accountMessage.hidden = false;
+  }
+  if (accountUser) accountUser.hidden = true;
+  if (authForm) authForm.hidden = false;
+  if (logoutButton) logoutButton.hidden = true;
+};
+
+const showSignedIn = (user) => {
+  if (accountMessage) {
+    accountMessage.textContent = '已连接 LZDSG 统一账号。';
+    accountMessage.hidden = false;
+  }
+  if (accountUser) {
+    accountUser.textContent = user.displayName || user.username;
+    accountUser.hidden = false;
+  }
+  if (authForm) authForm.hidden = true;
+  if (logoutButton) logoutButton.hidden = false;
+};
+
+const checkApiAndSession = async () => {
+  try {
+    await request('/health', { token: null });
+    setApiState('online');
+  } catch {
+    setApiState('offline');
+    if (getToken()) {
+      if (accountMessage) {
+        accountMessage.textContent = '账号服务离线，已保存的登录状态暂时无法验证。';
+        accountMessage.hidden = false;
+      }
+      if (accountUser) accountUser.hidden = true;
+      if (authForm) authForm.hidden = true;
+      if (logoutButton) logoutButton.hidden = false;
+    } else {
+      showSignedOut('账号服务暂时离线，请稍后重试。');
+    }
+    return;
+  }
+
+  const token = getToken();
+  if (!token) {
+    showSignedOut();
+    return;
+  }
+  try {
+    const result = await request('/api/v1/auth/me', { token });
+    showSignedIn(result.user);
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 401) showSignedOut('登录状态已失效，请重新登录。');
+    else showSignedOut('暂时无法验证登录状态，请稍后重试。');
+  }
+};
+
+const setAuthMode = (mode) => {
+  authMode = mode;
+  const registering = mode === 'register';
+  if (usernameField) usernameField.hidden = !registering;
+  const usernameInput = authForm?.elements.namedItem('username');
+  if (usernameInput) usernameInput.required = registering;
+  const passwordInput = authForm?.elements.namedItem('password');
+  if (passwordInput) passwordInput.autocomplete = registering ? 'new-password' : 'current-password';
+  modeLogin?.setAttribute('aria-pressed', String(!registering));
+  modeRegister?.setAttribute('aria-pressed', String(registering));
+  if (authSubmit) authSubmit.textContent = registering ? '创建账号' : '登录';
+  if (authError) authError.hidden = true;
+};
+
+modeLogin?.addEventListener('click', () => setAuthMode('login'));
+modeRegister?.addEventListener('click', () => setAuthMode('register'));
+authForm?.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  if (!(authForm instanceof HTMLFormElement)) return;
+  const formData = new FormData(authForm);
+  const passwordInput = authForm.elements.namedItem('password');
+  const email = String(formData.get('email') || '').trim();
+  const password = String(formData.get('password') || '');
+  const endpoint = authMode === 'register' ? '/api/v1/auth/register' : '/api/v1/auth/login';
+  const payload = authMode === 'register'
+    ? { username: String(formData.get('username') || '').trim(), email, password }
+    : { email, password };
+  if (authSubmit) authSubmit.disabled = true;
+  if (authError) authError.hidden = true;
+  try {
+    const result = await request(endpoint, { method: 'POST', body: payload, token: null });
+    saveToken(result.token);
+    showSignedIn(result.user);
+  } catch (error) {
+    showAuthError(error);
+  } finally {
+    if (passwordInput) passwordInput.value = '';
+    if (authSubmit) authSubmit.disabled = false;
+  }
+});
+
+logoutButton?.addEventListener('click', async () => {
+  const token = getToken();
+  clearToken();
+  try {
+    if (token) await request('/api/v1/auth/logout', { method: 'POST', token });
+    showSignedOut('已退出登录。');
+  } catch {
+    showSignedOut('本机登录状态已清除；服务端会话暂未确认撤销。');
+  }
+});
+
+if (getApiBaseUrl()) {
+  void checkApiAndSession();
+  setInterval(() => { void checkApiAndSession(); }, 60_000);
+} else {
+  setApiState('offline');
+  showSignedOut('账号服务尚未配置。');
+}
 
 const createProjectCard = (project) => {
   const card = document.createElement(project.href ? 'a' : 'article');
