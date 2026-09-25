@@ -50,10 +50,10 @@ if (!app.includes('renderProjectError') || !app.includes('aria-busy') || !app.in
   console.error('missing project loading/error handling');
   process.exit(1);
 }
-const authRequired = ['credentials: \'omit\'', "cache: 'no-store'", 'authorization', 'clearToken'];
+const authRequired = ['credentials: \'include\'', "cache: 'no-store'", 'authorization', 'clearToken'];
 const missingAuth = authRequired.filter((value) => !api.includes(value));
-if (missingAuth.length || !apiConfig.includes('https://api.lzdsg.top') || !app.includes('/api/v1/auth/me')) {
-  console.error(`missing API/auth safety wiring: ${missingAuth.join(', ')}`);
+if (missingAuth.length || !apiConfig.includes('https://api.lzdsg.top') || !app.includes('/api/v1/auth/me') || !app.includes("window.addEventListener('focus'") || app.includes('saveToken(')) {
+  console.error(`missing API/auth safety wiring or SSO focus refresh: ${missingAuth.join(', ')}`);
   process.exit(1);
 }
 for (const file of ['index.html', 'styles.css', 'app.js', 'api.js', 'api-config.js', 'projects.js']) {

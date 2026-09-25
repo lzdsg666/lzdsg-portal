@@ -85,7 +85,7 @@ export const request = async (path, { method = 'GET', body, token = getToken() }
       headers,
       body: body === undefined ? undefined : JSON.stringify(body),
       cache: 'no-store',
-      credentials: 'omit',
+      credentials: 'include',
       signal: AbortSignal.timeout(10_000)
     });
   } catch {

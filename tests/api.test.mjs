@@ -22,13 +22,13 @@ afterEach(() => {
   api.clearToken();
 });
 
-test('request uses configured API, no-store, omitted cookies and bearer auth', async () => {
+test('request uses configured API, no-store, credentialed SSO cookies and bearer migration', async () => {
   globalThis.localStorage = makeStorage();
   api.saveToken('opaque-session-token');
   globalThis.fetch = async (url, options) => {
     assert.equal(url, 'https://api.test.invalid/api/v1/auth/me');
     assert.equal(options.cache, 'no-store');
-    assert.equal(options.credentials, 'omit');
+    assert.equal(options.credentials, 'include');
     assert.equal(options.headers.authorization, 'Bearer opaque-session-token');
     return new Response(JSON.stringify({ user: { username: 'demo' } }), { status: 200 });
   };

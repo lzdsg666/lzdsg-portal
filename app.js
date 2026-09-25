@@ -1,4 +1,4 @@
-import { ApiError, clearToken, getApiBaseUrl, getToken, request, safeErrorMessage, saveToken } from './api.js';
+import { ApiError, clearToken, getApiBaseUrl, getToken, request, safeErrorMessage } from './api.js';
 
 const body = document.body;
 const menuToggle = document.querySelector('.menu-toggle');
@@ -74,13 +74,10 @@ const checkApiAndSession = async () => {
     return;
   }
 
-  const token = getToken();
-  if (!token) {
-    showSignedOut();
-    return;
-  }
   try {
-    const result = await request('/api/v1/auth/me', { token });
+    const result = await request('/api/v1/auth/me', { token: getToken() });
+    // Existing browser tokens are exchanged for the API's HttpOnly SSO cookie by /auth/me.
+    clearToken();
     showSignedIn(result.user);
   } catch (error) {
     if (error instanceof ApiError && error.status === 401) showSignedOut('登录状态已失效，请重新登录。');
@@ -119,7 +116,8 @@ authForm?.addEventListener('submit', async (event) => {
   if (authError) authError.hidden = true;
   try {
     const result = await request(endpoint, { method: 'POST', body: payload, token: null });
-    saveToken(result.token);
+    // The API sets the shared host-only HttpOnly cookie; do not persist bearer tokens in page storage.
+    clearToken();
     showSignedIn(result.user);
   } catch (error) {
     showAuthError(error);
@@ -133,7 +131,7 @@ logoutButton?.addEventListener('click', async () => {
   const token = getToken();
   clearToken();
   try {
-    if (token) await request('/api/v1/auth/logout', { method: 'POST', token });
+    await request('/api/v1/auth/logout', { method: 'POST', token });
     showSignedOut('已退出登录。');
   } catch {
     showSignedOut('本机登录状态已清除；服务端会话暂未确认撤销。');
@@ -143,6 +141,10 @@ logoutButton?.addEventListener('click', async () => {
 if (getApiBaseUrl()) {
   void checkApiAndSession();
   setInterval(() => { void checkApiAndSession(); }, 60_000);
+  window.addEventListener('focus', () => { void checkApiAndSession(); });
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) void checkApiAndSession();
+  });
 } else {
   setApiState('offline');
   showSignedOut('账号服务尚未配置。');
