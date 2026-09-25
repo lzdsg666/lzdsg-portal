@@ -46,4 +46,5 @@ body.light { --bg:#f4f6f1; --surface:#fff; --surface-2:#eef2e9; --line:#d6ddd0; 
 .auth-form button:disabled { opacity:.6; cursor:wait; }
 .auth-error { margin:0; color:#ff9b8f; }
 .logout-button { display:inline-block; cursor:pointer; background:transparent; border:0; padding:0 0 .2rem; font:inherit; }
+.admin-panel { margin-top:2rem; padding-top:1.25rem; border-top:1px solid var(--line); }.admin-panel h3 { margin:0 0 .5rem; }.admin-user-list { list-style:none; margin:1rem 0 0; padding:0; }.admin-user-list li { display:flex; justify-content:space-between; align-items:center; gap:1rem; padding:.8rem 0; border-top:1px solid var(--line); overflow-wrap:anywhere; }.admin-user-identity { min-width:0; }.admin-user-identity small { display:block; color:var(--muted); }.admin-user-delete { flex:none; min-height:40px; border:1px solid #b66; background:transparent; color:#ff9b8f; padding:.4rem .65rem; cursor:pointer; }
 @media (max-width:760px) { .account-section { display:block; }.account-panel { margin-top:2.5rem; padding:1.1rem; } }

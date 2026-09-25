@@ -16,6 +16,10 @@ const modeLogin = document.querySelector('#mode-login');
 const modeRegister = document.querySelector('#mode-register');
 const authSubmit = document.querySelector('#auth-submit');
 const logoutButton = document.querySelector('#logout-button');
+const adminPanel = document.querySelector('#admin-panel');
+const adminRefresh = document.querySelector('#admin-refresh');
+const adminMessage = document.querySelector('#admin-message');
+const adminUserList = document.querySelector('#admin-user-list');
 let authMode = 'login';
 let projects = null;
 
@@ -39,6 +43,7 @@ const showSignedOut = (message = '登录后可使用统一账号。') => {
   if (accountUser) accountUser.hidden = true;
   if (authForm) authForm.hidden = false;
   if (logoutButton) logoutButton.hidden = true;
+  if (adminPanel) adminPanel.hidden = true;
 };
 
 const showSignedIn = (user) => {
@@ -52,7 +57,51 @@ const showSignedIn = (user) => {
   }
   if (authForm) authForm.hidden = true;
   if (logoutButton) logoutButton.hidden = false;
+  if (adminPanel) adminPanel.hidden = user.role !== 'admin';
+  if (user.role === 'admin') void loadAdminUsers();
 };
+
+const loadAdminUsers = async () => {
+  if (!adminUserList || !adminMessage) return;
+  adminMessage.textContent = '正在加载用户…';
+  adminUserList.replaceChildren();
+  try {
+    const { users } = await request('/api/v1/admin/users', { token: null });
+    for (const user of users) {
+      const item = document.createElement('li');
+      const identity = document.createElement('span');
+      identity.className = 'admin-user-identity';
+      identity.textContent = `${user.username} · ${user.role}`;
+      const email = document.createElement('small');
+      email.textContent = user.email;
+      identity.append(email);
+      const remove = document.createElement('button');
+      remove.type = 'button';
+      remove.className = 'admin-user-delete';
+      remove.textContent = '删除';
+      remove.setAttribute('aria-label', `删除账号 ${user.username}`);
+      remove.addEventListener('click', async () => {
+        if (!window.confirm(`确定删除统一账号“${user.username}”？此操作会立即注销该账号的所有会话。`)) return;
+        remove.disabled = true;
+        try {
+          await request(`/api/v1/admin/users/${user.id}`, { method: 'DELETE', token: null });
+          item.remove();
+          adminMessage.textContent = `已删除账号 ${user.username}。`;
+        } catch (error) {
+          adminMessage.textContent = safeErrorMessage(error);
+          remove.disabled = false;
+        }
+      });
+      item.append(identity, remove);
+      adminUserList.append(item);
+    }
+    adminMessage.textContent = `共 ${users.length} 个账号。`;
+  } catch (error) {
+    adminMessage.textContent = safeErrorMessage(error);
+  }
+};
+
+adminRefresh?.addEventListener('click', () => { void loadAdminUsers(); });
 
 const checkApiAndSession = async () => {
   try {
@@ -68,6 +117,7 @@ const checkApiAndSession = async () => {
       if (accountUser) accountUser.hidden = true;
       if (authForm) authForm.hidden = true;
       if (logoutButton) logoutButton.hidden = false;
+      if (adminPanel) adminPanel.hidden = true;
     } else {
       showSignedOut('账号服务暂时离线，请稍后重试。');
     }

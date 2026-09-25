@@ -93,6 +93,12 @@
           <button id="auth-submit" class="button button-primary" type="submit">登录</button>
         </form>
         <button id="logout-button" class="text-link logout-button" type="button" hidden>退出登录</button>
+        <section id="admin-panel" class="admin-panel" aria-labelledby="admin-title" hidden>
+          <h3 id="admin-title">统一账号管理</h3>
+          <button id="admin-refresh" class="text-link" type="button">刷新用户</button>
+          <p id="admin-message" class="account-message" role="status" aria-live="polite"></p>
+          <ul id="admin-user-list" class="admin-user-list"></ul>
+        </section>
       </div>
     </section>
 
