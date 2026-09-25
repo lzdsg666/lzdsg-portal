@@ -114,13 +114,20 @@ authForm?.addEventListener('submit', async (event) => {
     : { email, password };
   if (authSubmit) authSubmit.disabled = true;
   if (authError) authError.hidden = true;
+  let credentialsAccepted = false;
   try {
-    const result = await request(endpoint, { method: 'POST', body: payload, token: null });
+    await request(endpoint, { method: 'POST', body: payload, token: null });
+    credentialsAccepted = true;
     // The API sets the shared host-only HttpOnly cookie; do not persist bearer tokens in page storage.
     clearToken();
-    showSignedIn(result.user);
+    const session = await request('/api/v1/auth/me', { token: null });
+    showSignedIn(session.user);
   } catch (error) {
-    showAuthError(error);
+    if (credentialsAccepted && error instanceof ApiError && error.status === 401) {
+      showAuthError(new Error('登录成功，但浏览器未保存共享登录状态。请检查 Cookie 设置后重试。'));
+    } else {
+      showAuthError(error);
+    }
   } finally {
     if (passwordInput) passwordInput.value = '';
     if (authSubmit) authSubmit.disabled = false;
