@@ -1,12 +1,132 @@
 import { ApiError, clearToken, getApiBaseUrl, getToken, request, safeErrorMessage } from './api.js';
 
-const body = document.body;
+/* ---------- header: mobile menu + UTC clock ---------- */
 const menuToggle = document.querySelector('.menu-toggle');
 const nav = document.querySelector('#site-nav');
-const themeToggle = document.querySelector('.theme-toggle');
+menuToggle?.addEventListener('click', () => {
+  const open = nav.classList.toggle('open');
+  menuToggle.setAttribute('aria-expanded', String(open));
+});
+nav?.querySelectorAll('a').forEach((link) => link.addEventListener('click', () => {
+  nav.classList.remove('open');
+  menuToggle?.setAttribute('aria-expanded', 'false');
+}));
+
 const clock = document.querySelector('#clock');
-const projectGrid = document.querySelector('#project-grid');
+const updateClock = () => {
+  if (clock) clock.textContent = `${new Date().toISOString().slice(11, 19)} UTC`;
+};
+updateClock();
+setInterval(updateClock, 1000);
+
+/* ---------- reveal on scroll ---------- */
+const observer = 'IntersectionObserver' in window
+  ? new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('is-visible');
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: .12 })
+  : { observe: (element) => element.classList.add('is-visible'), unobserve: () => {} };
+document.querySelectorAll('.reveal').forEach((element) => observer.observe(element));
+
+/* ---------- network topology canvas ---------- */
+(function topology(){
+  const canvas = document.getElementById('net');
+  const card = document.getElementById('netCard');
+  if (!canvas || !card) return;
+  const ctx = canvas.getContext('2d');
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const dpr = Math.min(devicePixelRatio || 1, 2);
+  let W = 0, H = 0, nodes = [], mx = -9999, my = -9999, t = 0;
+
+  const DEFS = [
+    { label: '总站', sub: 'PORTAL', fx: .5,  fy: .5,  r: 15, c: '#b8f36b', main: true },
+    { label: '实验室', sub: 'LAB · 18 TOOLS', fx: .22, fy: .3, r: 11, c: '#75d8ff' },
+    { label: '博客', sub: 'BLOG · 4 POSTS', fx: .8, fy: .32, r: 11, c: '#75d8ff' },
+    { label: 'API', sub: 'SOON', fx: .5, fy: .82, r: 8, c: '#5b6474', dim: true },
+    { label: '游戏', sub: '4 GAMES', fx: .16, fy: .66, r: 6, c: '#75d8ff', dim: true },
+    { label: '文章', sub: 'RSS', fx: .86, fy: .68, r: 6, c: '#75d8ff', dim: true },
+  ];
+  const LINKS = [[0, 1], [0, 2], [0, 3], [1, 4], [2, 5], [1, 2]];
+
+  function resize(){
+    const rect = card.getBoundingClientRect();
+    W = canvas.width = Math.max(1, rect.width * dpr);
+    H = canvas.height = Math.max(1, rect.height * dpr);
+    nodes = DEFS.map((n) => ({
+      ...n, x: n.fx * W, y: n.fy * H,
+      ph: Math.random() * Math.PI * 2, sp: .4 + Math.random() * .5,
+    }));
+  }
+  resize();
+  addEventListener('resize', resize);
+  card.addEventListener('pointermove', (e) => {
+    const rect = card.getBoundingClientRect();
+    mx = (e.clientX - rect.left) * dpr;
+    my = (e.clientY - rect.top) * dpr;
+  });
+  card.addEventListener('pointerleave', () => { mx = my = -9999; });
+
+  function frame(){
+    t += .016;
+    ctx.clearRect(0, 0, W, H);
+    LINKS.forEach(([a, b], li) => {
+      const A = nodes[a], B = nodes[b];
+      const pulse = reduced ? .5 : .35 + .25 * Math.sin(t * 1.6 + li);
+      ctx.strokeStyle = (A.dim || B.dim)
+        ? `rgba(91,100,116,${.25 * pulse + .15})`
+        : `rgba(184,243,107,${.28 * pulse + .12})`;
+      ctx.lineWidth = 1 * dpr;
+      ctx.beginPath(); ctx.moveTo(A.x, A.y); ctx.lineTo(B.x, B.y); ctx.stroke();
+      if (!reduced && !(A.dim && B.dim)) {
+        const p = (t * .25 + li * .37) % 1;
+        ctx.fillStyle = 'rgba(184,243,107,.9)';
+        ctx.beginPath();
+        ctx.arc(A.x + (B.x - A.x) * p, A.y + (B.y - A.y) * p, 1.8 * dpr, 0, 7);
+        ctx.fill();
+      }
+    });
+    nodes.forEach((n) => {
+      if (!reduced) {
+        n.x += Math.cos(t * n.sp + n.ph) * .35 * dpr;
+        n.y += Math.sin(t * n.sp * 1.2 + n.ph) * .35 * dpr;
+        const dx = n.x - mx, dy = n.y - my, d = Math.hypot(dx, dy);
+        if (d < 120 * dpr && d > 1) { n.x += dx / d * 1.1 * dpr; n.y += dy / d * 1.1 * dpr; }
+        n.x += (n.fx * W - n.x) * .02;
+        n.y += (n.fy * H - n.y) * .02;
+      }
+      const glow = n.main ? 26 : 14;
+      const g = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, glow * dpr);
+      g.addColorStop(0, `${n.c}55`); g.addColorStop(1, `${n.c}00`);
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.arc(n.x, n.y, glow * dpr, 0, 7); ctx.fill();
+      ctx.fillStyle = n.dim ? '#3a4150' : n.c;
+      ctx.beginPath(); ctx.arc(n.x, n.y, (n.main ? 5 : 3.4) * dpr, 0, 7); ctx.fill();
+      if (n.main) {
+        ctx.fillStyle = '#0b0d12';
+        ctx.font = `700 ${7 * dpr}px monospace`;
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText('L', n.x, n.y + .5 * dpr);
+      }
+      ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+      ctx.fillStyle = n.dim ? '#5b6474' : 'rgba(242,244,247,.92)';
+      ctx.font = `${11 * dpr}px sans-serif`;
+      ctx.fillText(n.label, n.x, n.y + (n.r + 16) * dpr);
+      ctx.fillStyle = 'rgba(91,100,116,.9)';
+      ctx.font = `${8.5 * dpr}px monospace`;
+      ctx.fillText(n.sub, n.x, n.y + (n.r + 30) * dpr);
+    });
+    if (!reduced) requestAnimationFrame(frame);
+  }
+  frame();
+})();
+
+/* ---------- unified account (auth logic preserved; honest offline state) ---------- */
 const apiStatus = document.querySelector('#api-status');
+const apiSoon = document.querySelector('#api-soon');
 const accountMessage = document.querySelector('#account-message');
 const accountUser = document.querySelector('#account-user');
 const authForm = document.querySelector('#auth-form');
@@ -21,13 +141,23 @@ const adminRefresh = document.querySelector('#admin-refresh');
 const adminMessage = document.querySelector('#admin-message');
 const adminUserList = document.querySelector('#admin-user-list');
 let authMode = 'login';
-let projects = null;
 
 const setApiState = (state) => {
   if (!apiStatus) return;
   apiStatus.textContent = state === 'online' ? 'ONLINE' : state === 'offline' ? 'OFFLINE' : 'CHECKING';
   apiStatus.dataset.state = state;
 };
+
+/* v2: API 未上线时显示诚实占位，不摆点不动的登录框。 */
+const showApiSoon = () => {
+  if (apiSoon) apiSoon.hidden = false;
+  if (accountMessage) accountMessage.hidden = true;
+  if (accountUser) accountUser.hidden = true;
+  if (authForm) authForm.hidden = true;
+  if (logoutButton) logoutButton.hidden = true;
+  if (adminPanel) adminPanel.hidden = true;
+};
+const hideApiSoon = () => { if (apiSoon) apiSoon.hidden = true; };
 
 const showAuthError = (error) => {
   if (!authError) return;
@@ -36,6 +166,7 @@ const showAuthError = (error) => {
 };
 
 const showSignedOut = (message = '登录后可使用统一账号。') => {
+  hideApiSoon();
   if (accountMessage) {
     accountMessage.textContent = message;
     accountMessage.hidden = false;
@@ -47,6 +178,7 @@ const showSignedOut = (message = '登录后可使用统一账号。') => {
 };
 
 const showSignedIn = (user) => {
+  hideApiSoon();
   if (accountMessage) {
     accountMessage.textContent = '已连接 LZDSG 统一账号。';
     accountMessage.hidden = false;
@@ -109,18 +241,7 @@ const checkApiAndSession = async () => {
     setApiState('online');
   } catch {
     setApiState('offline');
-    if (getToken()) {
-      if (accountMessage) {
-        accountMessage.textContent = '账号服务离线，已保存的登录状态暂时无法验证。';
-        accountMessage.hidden = false;
-      }
-      if (accountUser) accountUser.hidden = true;
-      if (authForm) authForm.hidden = true;
-      if (logoutButton) logoutButton.hidden = false;
-      if (adminPanel) adminPanel.hidden = true;
-    } else {
-      showSignedOut('账号服务暂时离线，请稍后重试。');
-    }
+    showApiSoon();
     return;
   }
 
@@ -204,46 +325,94 @@ if (getApiBaseUrl()) {
   });
 } else {
   setApiState('offline');
-  showSignedOut('账号服务尚未配置。');
+  showApiSoon();
 }
 
-const createProjectCard = (project) => {
+/* ---------- node cards, rendered from projects.js ---------- */
+const projectGrid = document.querySelector('#project-grid');
+
+const createNodeCard = (project) => {
   const card = document.createElement(project.href ? 'a' : 'article');
-  card.className = `project-card reveal${project.href ? ' project-card-live' : ' project-card-placeholder'}`;
-  if (project.id === 'tools') card.id = 'tools';
+  card.className = 'card reveal';
+  card.id = project.id;
   if (project.href) {
     card.href = project.href;
     if (project.external) {
       card.target = '_blank';
       card.rel = 'noreferrer';
     }
-    card.setAttribute('aria-label', `${project.title}，打开项目`);
+    card.setAttribute('aria-label', `${project.title}，打开节点`);
   } else {
     card.setAttribute('aria-disabled', 'true');
   }
-  const number = document.createElement('span');
-  number.className = 'project-number';
-  number.textContent = project.number;
-  const state = document.createElement('span');
-  state.className = 'project-state';
-  state.textContent = project.state;
+
+  const top = document.createElement('div');
+  top.className = 'card-top';
+  const pill = document.createElement('span');
+  pill.className = `pill ${project.state === 'LIVE' ? 'live' : 'soon'}`;
+  pill.textContent = project.state === 'LIVE' ? '● LIVE' : '○ SOON';
+  const num = document.createElement('span');
+  num.className = 'card-num';
+  num.textContent = project.number;
+  top.append(pill, num);
+
   const title = document.createElement('h3');
   title.textContent = project.title;
-  const description = document.createElement('p');
-  description.textContent = project.description;
-  const detail = document.createElement('small');
-  detail.className = 'project-detail';
+  const sub = document.createElement('small');
+  sub.textContent = project.name;
+  title.append(sub);
+
+  const desc = document.createElement('p');
+  desc.textContent = project.description;
+  const detail = document.createElement('p');
+  detail.className = 'card-detail';
   detail.textContent = project.detail;
-  const arrow = document.createElement('span');
-  arrow.className = 'project-arrow';
-  arrow.textContent = project.href ? '↗' : '—';
-  card.append(number, state, title, description, detail, arrow);
+  card.append(top, title, desc, detail);
+
+  if (project.posts?.length) {
+    const list = document.createElement('div');
+    list.className = 'post-list';
+    for (const post of project.posts) {
+      const row = document.createElement('div');
+      row.className = 'post';
+      const time = document.createElement('time');
+      time.textContent = post.date;
+      const name = document.createElement('span');
+      name.textContent = post.title;
+      row.append(time, name);
+      list.append(row);
+    }
+    card.append(list);
+  }
+
+  if (project.meta?.length) {
+    const meta = document.createElement('div');
+    meta.className = 'meta';
+    for (const m of project.meta) {
+      const chip = document.createElement('span');
+      chip.textContent = m;
+      meta.append(chip);
+    }
+    card.append(meta);
+  }
+
+  if (project.href) {
+    const link = document.createElement('span');
+    link.className = 'card-link';
+    link.innerHTML = `进入 <span class="arr">↗</span>`;
+    card.append(link);
+  } else {
+    const note = document.createElement('p');
+    note.className = 'card-soon-note';
+    note.textContent = '服务就绪后自动开放，无需你做任何事。';
+    card.append(note);
+  }
   return card;
 };
 
-const renderProjects = () => {
+const renderProjects = (projects) => {
   if (!projectGrid) return;
-  projectGrid.replaceChildren(...projects.map(createProjectCard));
+  projectGrid.replaceChildren(...projects.map(createNodeCard));
   projectGrid.setAttribute('aria-busy', 'false');
   projectGrid.querySelectorAll('.reveal').forEach((element) => observer.observe(element));
 };
@@ -254,53 +423,14 @@ const renderProjectError = () => {
   const error = document.createElement('p');
   error.className = 'project-state-message project-state-error';
   error.setAttribute('role', 'alert');
-  error.textContent = '项目索引暂时无法加载，请稍后重试。';
+  error.textContent = '节点索引暂时无法加载，请稍后重试。';
   projectGrid.append(error);
   projectGrid.setAttribute('aria-busy', 'false');
 };
 
-menuToggle?.addEventListener('click', () => {
-  const open = nav.classList.toggle('open');
-  menuToggle.setAttribute('aria-expanded', String(open));
-});
-
-nav?.querySelectorAll('a').forEach((link) => link.addEventListener('click', () => {
-  nav.classList.remove('open');
-  menuToggle?.setAttribute('aria-expanded', 'false');
-}));
-
-const savedTheme = localStorage.getItem('lzdsg-theme');
-if (savedTheme === 'light') body.classList.add('light');
-themeToggle?.addEventListener('click', () => {
-  const light = body.classList.toggle('light');
-  localStorage.setItem('lzdsg-theme', light ? 'light' : 'dark');
-  themeToggle.setAttribute('aria-pressed', String(light));
-});
-
-const updateClock = () => {
-  if (clock) clock.textContent = `${new Date().toISOString().slice(11, 19)} UTC`;
-};
-updateClock();
-setInterval(updateClock, 1000);
-
-const observer = 'IntersectionObserver' in window
-  ? new IntersectionObserver((entries) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-          entry.target.classList.add('is-visible');
-          observer.unobserve(entry.target);
-        }
-      });
-    }, { threshold: .12 })
-  : { observe: (element) => element.classList.add('is-visible'), unobserve: () => {} };
-document.querySelectorAll('.reveal').forEach((element) => observer.observe(element));
-
 import('./projects.js')
-  .then((module) => {
-    projects = module.projects;
-    renderProjects();
-  })
+  .then((module) => renderProjects(module.projects))
   .catch((error) => {
-    console.error('project index failed to load', error);
+    console.error('node index failed to load', error);
     renderProjectError();
   });
